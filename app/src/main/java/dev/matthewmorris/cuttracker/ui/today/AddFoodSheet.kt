@@ -3,6 +3,7 @@ package dev.matthewmorris.cuttracker.ui.today
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -15,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,7 +36,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import dev.matthewmorris.cuttracker.R
 import dev.matthewmorris.cuttracker.data.db.FoodItem
@@ -45,6 +50,16 @@ import dev.matthewmorris.cuttracker.ui.format
 import dev.matthewmorris.cuttracker.ui.formatThousands
 import dev.matthewmorris.cuttracker.ui.toDecimalOrNull
 import dev.matthewmorris.cuttracker.ui.transparentListItemColors
+
+/**
+ * ModalBottomSheet hands leftover fling velocity to a bouncy spring even when the sheet is already
+ * fully open, so flicking up overshoots and bounces back. The sheet never needs upward velocity (it
+ * always opens fully), so swallow it here. Downward flings still pass through to swipe-to-dismiss.
+ */
+private object NoUpwardFlingToSheet : NestedScrollConnection {
+    override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity =
+        if (available.y < 0f) Velocity(0f, available.y) else Velocity.Zero
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -60,9 +75,22 @@ fun AddFoodSheet(
     var editing by remember { mutableStateOf<FoodItem?>(null) }
     val newPreset = FoodItem(name = "", kcalPerServing = 0, proteinG = 0.0, isPreset = true)
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        // A drag on the handle would otherwise go straight to the sheet and skip the filter.
+        dragHandle = {
+            Box(Modifier.nestedScroll(NoUpwardFlingToSheet).verticalScroll(rememberScrollState())) {
+                BottomSheetDefaults.DragHandle()
+            }
+        },
+    ) {
         Column(
-            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 32.dp),
+            Modifier
+                .nestedScroll(NoUpwardFlingToSheet)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             SectionTitle(stringResource(R.string.treats_and_drinks), stringResource(R.string.preset_hint))
