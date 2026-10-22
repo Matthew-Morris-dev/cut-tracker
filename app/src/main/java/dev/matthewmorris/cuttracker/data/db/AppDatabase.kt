@@ -3,6 +3,7 @@ package dev.matthewmorris.cuttracker.data.db
 import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -15,8 +16,9 @@ import java.time.LocalDate
 
 @Database(
     entities = [FoodItem::class, FoodLog::class, Goal::class, DayGoalStatus::class, BodyReading::class, Targets::class],
-    version = 2,
+    version = 3,
     exportSchema = true,
+    autoMigrations = [AutoMigration(from = 2, to = 3)],
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {

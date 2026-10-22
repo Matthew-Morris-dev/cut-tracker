@@ -42,6 +42,25 @@ class MigrationTest {
         assertEquals(0, oldTable)
     }
 
+    @Test fun `v3 adds per-100 g food columns, empty for existing foods`() {
+        helper.createDatabase(DB, 2).apply {
+            execSQL(
+                "INSERT INTO FoodItem (name, kcalPerServing, proteinG, servingLabel, barcode, tags, isFavourite, isPreset) " +
+                    "VALUES ('Pint of beer', 225, 2.0, '1 pint', NULL, 'alcohol', 0, 1)",
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(DB, 3, true)
+
+        db.query("SELECT kcalPer100g, isLiquid, lastAmountG FROM FoodItem").use { c ->
+            c.moveToFirst()
+            assertEquals(true, c.isNull(0))
+            assertEquals(0, c.getInt(1))
+            assertEquals(true, c.isNull(2))
+        }
+    }
+
     private companion object {
         const val DB = "migration-test"
     }

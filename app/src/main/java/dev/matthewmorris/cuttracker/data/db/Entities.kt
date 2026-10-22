@@ -1,5 +1,6 @@
 package dev.matthewmorris.cuttracker.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -23,6 +24,19 @@ data class FoodItem(
     val tags: Set<String> = emptySet(),
     val isFavourite: Boolean = false,
     val isPreset: Boolean = false,
+    val brand: String? = null,
+    /**
+     * Foods from Open Food Facts are kept per 100 g (or ml), the figure it gets right; the amount is
+     * chosen when logging. Null for presets and quick-add foods, which are per serving.
+     */
+    val kcalPer100g: Double? = null,
+    val proteinPer100g: Double? = null,
+    /** As listed on Open Food Facts, which is often wrong; offered as a shortcut, never assumed. */
+    val servingG: Double? = null,
+    val packG: Double? = null,
+    @ColumnInfo(defaultValue = "0") val isLiquid: Boolean = false,
+    /** The amount logged last time, offered first next time. */
+    val lastAmountG: Double? = null,
 )
 
 /**
@@ -40,6 +54,8 @@ data class FoodLog(
     val proteinG: Double,
     val servings: Double = 1.0,
     val tags: Set<String> = emptySet(),
+    /** Set when the amount was chosen in grams (or ml), for foods kept per 100 g. */
+    val grams: Double? = null,
 )
 
 /** "No alcohol" is avoidTag `alcohol`. */

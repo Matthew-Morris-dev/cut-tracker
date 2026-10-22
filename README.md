@@ -15,8 +15,8 @@ covered by Android Auto Backup.
 | --- | --- | --- |
 | 1. Log calories | Room schema, Today screen, quick-add kcal/protein, daily total vs target | Done |
 | 2. Goals and calendar | Tags, treat/alcohol presets, auto-miss rule, month calendar, streaks | Done |
-| 3. Renpho via Health Connect | Import, background sync, 7-day average chart, calorie write-back | Built, on-phone test pending |
-| 4. Faster food entry | Open Food Facts search, barcode scanning | Planned |
+| 3. Renpho via Health Connect | Import, background sync, 7-day average chart, calorie write-back | Done |
+| 4. Faster food entry | Open Food Facts search, barcode scanning, amounts by serving or gram | Built, on-phone scan test pending |
 | 5. Smart targets | Adaptive calorie target, goal-date projection, evening reminder | Planned |
 | 6. Polish | CSV export, home-screen widget, release build | Planned |
 
@@ -58,6 +58,30 @@ Streaks count consecutive days where every goal was met. A past unmarked day bre
 today being unmarked does not. With a weekly allowance (e.g. alcohol on one day a week), misses
 within the allowance (weeks start Monday) keep the streak alive without adding to it.
 
+## Food search and barcodes
+
+Foods come from [Open Food Facts](https://world.openfoodfacts.org), a free, user-edited database.
+This is the only thing the app uses the network for.
+
+- **Search** in the add sheet filters your own foods as you type. Pressing search asks Open Food
+  Facts (all countries) through Search-a-licious, its full-text search. It never searches per
+  keystroke: Open Food Facts allows 10 searches and 15 product lookups a minute per IP and may ban
+  above that, so the client stays under both and says so instead of retrying.
+- **Scanning** uses Google's code scanner from Play services, which brings its own camera screen,
+  so the app needs no camera permission. Play services downloads the scanner on first use. A barcode
+  is checked against your saved foods first (offline), then Open Food Facts; one it doesn't know
+  opens quick add, and the food is then recognised next time.
+- **Amounts**: Open Food Facts gets per-100 g values right and serving sizes often wrong, so foods
+  are stored per 100 g. The amount screen offers servings and the whole pack first, then a gram (or
+  ml) field, defaulting to what you logged last time.
+- **Tags**: drinks with alcohol are suggested as `alcohol`, and sweets, chocolate, biscuits, cakes,
+  ice cream and crisps as `treat`, from the product's categories. You confirm or change it before
+  logging, so a scanned beer still breaks the "No alcohol" goal.
+- Data quality varies. Search results and product pages are fetched separately, and a product page
+  can lack calories its search entry still has; the app takes each part from where it exists.
+
+Requests send `User-Agent: CutTracker/<version> (<repo URL>)`, as Open Food Facts asks.
+
 ## Building
 
 Needs JDK 17 to 21 (Gradle 8.14 does not run on Java 25) and the Android SDK (platform 36).
@@ -79,9 +103,11 @@ app/src/main/java/dev/matthewmorris/cuttracker/
   data/db/     Room entities, DAOs, database and first-run seed (presets, goals, targets)
   data/        Repositories and GoalStatusResolver (persists the day-status rule)
   data/health/ Health Connect: client wrapper, two-way sync, background worker
+  data/food/   Open Food Facts client, response mapping, rate limiting
   domain/      Pure Kotlin: day-status rule, calendar colours, streaks, trends
   ui/          Compose screens: today, calendar, progress, settings
 ```
 
-Stack: Kotlin, Jetpack Compose, Material 3, Room, Health Connect, WorkManager, Vico charts, MVVM
+Stack: Kotlin, Jetpack Compose, Material 3, Room, Health Connect, WorkManager, Vico charts,
+Retrofit with kotlinx.serialization, Google code scanner, MVVM
 (screens → ViewModels → repositories), min SDK 28.

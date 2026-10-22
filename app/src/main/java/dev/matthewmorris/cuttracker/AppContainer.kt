@@ -7,6 +7,7 @@ import dev.matthewmorris.cuttracker.data.GoalRepository
 import dev.matthewmorris.cuttracker.data.GoalStatusResolver
 import dev.matthewmorris.cuttracker.data.TargetsRepository
 import dev.matthewmorris.cuttracker.data.db.AppDatabase
+import dev.matthewmorris.cuttracker.data.food.OpenFoodFactsClient
 import dev.matthewmorris.cuttracker.data.health.HealthConnectSource
 import dev.matthewmorris.cuttracker.data.health.HealthConnectSync
 import dev.matthewmorris.cuttracker.data.health.HealthSyncStore
@@ -27,7 +28,11 @@ class AppContainer(context: Context) {
         HealthSyncWorker.schedule(context, enabled)
     }
 
-    val foodRepository = FoodRepository(db, resolver, clock, healthSync)
+    private val openFoodFacts = OpenFoodFactsClient(
+        userAgent = "CutTracker/${BuildConfig.VERSION_NAME} (https://github.com/Matthew-Morris-dev/cut-tracker)",
+    )
+
+    val foodRepository = FoodRepository(db, resolver, clock, healthSync, openFoodFacts)
     val goalRepository = GoalRepository(db, resolver)
     val targetsRepository = TargetsRepository(db, clock)
     val bodyRepository = BodyRepository(db, clock)

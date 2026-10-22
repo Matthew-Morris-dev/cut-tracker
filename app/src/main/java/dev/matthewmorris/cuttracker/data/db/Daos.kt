@@ -26,6 +26,22 @@ interface FoodDao {
     @Upsert
     suspend fun upsertItem(item: FoodItem): Long
 
+    @Query("SELECT * FROM FoodItem WHERE id = :id")
+    suspend fun itemById(id: Long): FoodItem?
+
+    @Query("SELECT * FROM FoodItem WHERE barcode = :barcode LIMIT 1")
+    suspend fun itemByBarcode(barcode: String): FoodItem?
+
+    /** Your own foods matching a search, favourites first. */
+    @Query(
+        """
+        SELECT * FROM FoodItem
+        WHERE name LIKE '%' || :query || '%' OR brand LIKE '%' || :query || '%'
+        ORDER BY isFavourite DESC, isPreset DESC, name LIMIT 20
+        """,
+    )
+    suspend fun searchItems(query: String): List<FoodItem>
+
     @Delete
     suspend fun deleteItem(item: FoodItem)
 

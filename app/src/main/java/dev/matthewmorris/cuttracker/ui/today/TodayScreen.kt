@@ -29,6 +29,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,8 +56,8 @@ import kotlin.math.abs
 fun TodayScreen() {
     val vm = appViewModel { TodayViewModel(it) }
     val state by vm.state.collectAsStateWithLifecycle()
-    val sheet by vm.sheet.collectAsStateWithLifecycle()
     var adding by remember { mutableStateOf(false) }
+    LaunchedEffect(vm) { vm.sheetDone.collect { adding = false } }
 
     ScreenScaffold(
         title = stringResource(R.string.tab_today),
@@ -86,9 +87,10 @@ fun TodayScreen() {
                 ListItem(
                     headlineContent = { Text(log.name) },
                     supportingContent = {
+                        val amount = log.grams?.let { stringResource(R.string.amount_value, it.format(0), stringResource(R.string.unit_g)) }
                         val tags = log.tags.map { tagLabel(it) }
                         val protein = stringResource(R.string.protein_g, log.proteinG.format(0))
-                        Text((listOf(protein) + tags).joinToString(" · "))
+                        Text((listOfNotNull(amount, protein) + tags).joinToString(" · "))
                     },
                     trailingContent = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -104,18 +106,7 @@ fun TodayScreen() {
     }
 
     if (adding) {
-        AddFoodSheet(
-            state = sheet,
-            onDismiss = { adding = false },
-            onLogItem = { vm.logItem(it); adding = false },
-            onRelog = { vm.relog(it); adding = false },
-            onQuickAdd = { name, kcal, protein, tag, favourite ->
-                vm.quickAdd(name, kcal, protein, tag, favourite)
-                adding = false
-            },
-            onSaveItem = vm::saveItem,
-            onDeleteItem = vm::deleteItem,
-        )
+        AddFoodSheet(vm, onDismiss = { adding = false })
     }
 }
 

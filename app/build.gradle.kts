@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -15,8 +16,8 @@ android {
         applicationId = "dev.matthewmorris.cuttracker"
         minSdk = 28
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.3.0"
+        versionCode = 3
+        versionName = "0.4.0"
     }
 
     buildTypes {
@@ -73,6 +74,11 @@ dependencies {
     implementation(libs.health.connect)
     implementation(libs.work.runtime.ktx)
     implementation(libs.vico.compose.m3)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.kotlinx.serialization)
+    implementation(libs.okhttp)
+    implementation(libs.code.scanner)
     debugImplementation(libs.compose.ui.tooling)
 
     testImplementation(libs.junit)
@@ -81,4 +87,5 @@ dependencies {
     testImplementation(libs.androidx.test.junit)
     testImplementation(libs.room.testing)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.okhttp.mockwebserver)
 }
