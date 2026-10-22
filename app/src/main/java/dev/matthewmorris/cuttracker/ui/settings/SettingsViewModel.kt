@@ -1,10 +1,12 @@
 package dev.matthewmorris.cuttracker.ui.settings
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matthewmorris.cuttracker.AppContainer
 import dev.matthewmorris.cuttracker.data.db.Goal
 import dev.matthewmorris.cuttracker.data.db.Targets
+import dev.matthewmorris.cuttracker.data.health.HealthStatus
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -27,4 +29,18 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun updateGoal(goal: Goal) = viewModelScope.launch { goals.update(goal) }
+
+    val health: StateFlow<HealthStatus> = container.healthSync.status
+
+    fun syncHealth() = viewModelScope.launch { container.healthSync.sync() }
+
+    /** Emulator debug builds only: puts two weeks of weigh-ins into Health Connect, then syncs them back in. */
+    fun writeTestWeighIns() = viewModelScope.launch {
+        try {
+            container.healthSource.writeTestWeighIns(container.clock)
+        } catch (e: Exception) {
+            Log.w("SettingsViewModel", "Couldn't write test weigh-ins", e)
+        }
+        container.healthSync.sync()
+    }
 }

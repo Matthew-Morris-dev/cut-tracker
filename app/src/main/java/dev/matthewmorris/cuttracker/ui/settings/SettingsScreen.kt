@@ -28,11 +28,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.health.connect.client.HealthConnectClient
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.matthewmorris.cuttracker.R
+import dev.matthewmorris.cuttracker.data.health.HealthAvailability
+import dev.matthewmorris.cuttracker.data.health.HealthPermissions
+import dev.matthewmorris.cuttracker.ui.health.HealthConnectCard
+import dev.matthewmorris.cuttracker.ui.health.rememberHealthConnectRequest
 import dev.matthewmorris.cuttracker.data.db.Goal
 import dev.matthewmorris.cuttracker.data.db.Targets
 import dev.matthewmorris.cuttracker.domain.Phase
@@ -54,6 +60,9 @@ fun SettingsScreen() {
     val goals by vm.allGoals.collectAsStateWithLifecycle()
     var editingGoal by remember { mutableStateOf<Goal?>(null) }
     var addingGoal by remember { mutableStateOf(false) }
+    val health by vm.health.collectAsStateWithLifecycle()
+    val requestHealthConnect = rememberHealthConnectRequest(onResult = { vm.syncHealth() })
+    val context = LocalContext.current
 
     ScreenScaffold(title = stringResource(R.string.tab_settings)) { padding ->
         Column(
@@ -61,6 +70,21 @@ fun SettingsScreen() {
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             targets?.let { current -> TargetsCard(current, vm::saveTargets) }
+            HealthConnectCard(
+                status = health,
+                onRequest = requestHealthConnect,
+                onSyncNow = { vm.syncHealth() },
+                extraActions = {
+                    if (health.availability == HealthAvailability.AVAILABLE) {
+                        OutlinedButton(onClick = { context.startActivity(HealthConnectClient.getHealthConnectManageDataIntent(context)) }) {
+                            Text(stringResource(R.string.hc_manage))
+                        }
+                    }
+                    if (HealthPermissions.canWriteTestData && health.connected) {
+                        OutlinedButton(onClick = { vm.writeTestWeighIns() }) { Text(stringResource(R.string.hc_debug_test_weigh_ins)) }
+                    }
+                },
+            )
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(stringResource(R.string.daily_goals), style = MaterialTheme.typography.titleMedium)

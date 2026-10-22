@@ -15,8 +15,8 @@ android {
         applicationId = "dev.matthewmorris.cuttracker"
         minSdk = 28
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.2.0"
+        versionCode = 2
+        versionName = "0.3.0"
     }
 
     buildTypes {
@@ -31,6 +31,17 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        // Robolectric's Android 16 runtime reaches into the JDK's FileDescriptor internals.
+        unitTests.all { it.jvmArgs("--add-opens=java.base/jdk.internal.access=ALL-UNNAMED") }
+    }
+    sourceSets {
+        // Room migration tests read the exported schemas as assets, and Robolectric only sees the
+        // app variant's assets, so they go in debug builds (never release).
+        getByName("debug").assets.srcDir("$projectDir/schemas")
     }
 }
 
@@ -59,7 +70,15 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.health.connect)
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.vico.compose.m3)
     debugImplementation(libs.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.junit)
+    testImplementation(libs.room.testing)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

@@ -3,6 +3,7 @@ package dev.matthewmorris.cuttracker.data.db
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import dev.matthewmorris.cuttracker.domain.BodyMetric
 import dev.matthewmorris.cuttracker.domain.GoalStatus
 import dev.matthewmorris.cuttracker.domain.MeasurementSource
 import dev.matthewmorris.cuttracker.domain.Phase
@@ -61,14 +62,20 @@ data class DayGoalStatus(
     val source: StatusSource,
 )
 
+/**
+ * One measurement: a weight, a body-fat percentage or a lean mass. Health Connect stores these as
+ * separate records with their own ids, so each record maps to exactly one row; a weigh-in on screen
+ * is the readings taken within a few minutes of each other.
+ */
 @Entity(indices = [Index("hcRecordId", unique = true), Index("timestamp")])
-data class BodyMeasurement(
+data class BodyReading(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val timestamp: Instant,
-    val weightKg: Double,
-    val bodyFatPct: Double? = null,
-    val leanMassKg: Double? = null,
+    val metric: BodyMetric,
+    val value: Double,
     val source: MeasurementSource,
+    /** Package of the app that wrote it to Health Connect, e.g. Renpho Health. Null for manual. */
+    val sourceApp: String? = null,
     val hcRecordId: String? = null,
 )
 

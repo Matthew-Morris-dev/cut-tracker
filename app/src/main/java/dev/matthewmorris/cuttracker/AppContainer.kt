@@ -7,6 +7,10 @@ import dev.matthewmorris.cuttracker.data.GoalRepository
 import dev.matthewmorris.cuttracker.data.GoalStatusResolver
 import dev.matthewmorris.cuttracker.data.TargetsRepository
 import dev.matthewmorris.cuttracker.data.db.AppDatabase
+import dev.matthewmorris.cuttracker.data.health.HealthConnectSource
+import dev.matthewmorris.cuttracker.data.health.HealthConnectSync
+import dev.matthewmorris.cuttracker.data.health.HealthSyncStore
+import dev.matthewmorris.cuttracker.data.health.HealthSyncWorker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,10 +22,15 @@ class AppContainer(context: Context) {
     private val db = AppDatabase.build(context)
     private val resolver = GoalStatusResolver(db) { LocalDate.now(clock) }
 
-    val foodRepository = FoodRepository(db, resolver, clock)
+    val healthSource = HealthConnectSource(context)
+    val healthSync = HealthConnectSync(healthSource, HealthSyncStore(context), db, clock) { enabled ->
+        HealthSyncWorker.schedule(context, enabled)
+    }
+
+    val foodRepository = FoodRepository(db, resolver, clock, healthSync)
     val goalRepository = GoalRepository(db, resolver)
     val targetsRepository = TargetsRepository(db, clock)
-    val bodyRepository = BodyRepository(db)
+    val bodyRepository = BodyRepository(db, clock)
 
     private val _today = MutableStateFlow(LocalDate.now(clock))
 
@@ -31,5 +40,6 @@ class AppContainer(context: Context) {
     suspend fun onForeground() {
         _today.value = LocalDate.now(clock)
         resolver.resolveAll()
+        healthSync.sync()
     }
 }

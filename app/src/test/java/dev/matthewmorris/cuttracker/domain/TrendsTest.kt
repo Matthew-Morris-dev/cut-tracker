@@ -34,4 +34,25 @@ class TrendsTest {
         val readings = listOf(DailyReading(end.minusDays(7), 84.0), DailyReading(end, 83.4))
         assertEquals(-0.6, Trends.weeklyChange(readings, end)!!, 1e-9)
     }
+
+    @Test fun `daily means are one per day, oldest first`() {
+        val readings = listOf(
+            DailyReading(end, 83.0),
+            DailyReading(end.minusDays(1), 84.0),
+            DailyReading(end, 84.0),
+        )
+        assertEquals(
+            listOf(DailyReading(end.minusDays(1), 84.0), DailyReading(end, 83.5)),
+            Trends.dailyMeans(readings),
+        )
+    }
+
+    @Test fun `moving average skips days with nothing in their window`() {
+        val readings = listOf(DailyReading(end.minusDays(9), 85.0), DailyReading(end, 83.0))
+        val series = Trends.movingAverage(readings, end.minusDays(10), end)
+        // Day -9 covers days -9 to -3; days -2 to -1 have no reading in their window; day 0 sees only itself.
+        assertEquals((9 downTo 3).map { end.minusDays(it.toLong()) } + end, series.map { it.date })
+        assertEquals(83.0, series.last().value, 1e-9)
+    }
 }
+

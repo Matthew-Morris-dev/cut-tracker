@@ -3,11 +3,14 @@ package dev.matthewmorris.cuttracker.data.db
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import androidx.room.Upsert
+import dev.matthewmorris.cuttracker.domain.BodyMetric
 import dev.matthewmorris.cuttracker.domain.GoalStatus
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 import java.time.LocalDate
 
 data class LogTags(val date: LocalDate, val tags: Set<String>)
@@ -47,6 +50,9 @@ interface FoodDao {
 
     @Query("SELECT date, tags FROM FoodLog WHERE date BETWEEN :from AND :to")
     suspend fun logTagsBetween(from: LocalDate, to: LocalDate): List<LogTags>
+
+    @Query("SELECT * FROM FoodLog WHERE date >= :from")
+    suspend fun logsSince(from: LocalDate): List<FoodLog>
 
     @Query("SELECT MIN(date) FROM FoodLog")
     suspend fun earliestLogDate(): LocalDate?
@@ -105,12 +111,25 @@ interface TargetsDao {
 
 @Dao
 interface BodyDao {
-    @Query("SELECT * FROM BodyMeasurement ORDER BY timestamp DESC")
-    fun all(): Flow<List<BodyMeasurement>>
+    @Query("SELECT * FROM BodyReading ORDER BY timestamp DESC")
+    fun all(): Flow<List<BodyReading>>
+
+    @Query("SELECT * FROM BodyReading ORDER BY timestamp DESC")
+    suspend fun getAll(): List<BodyReading>
 
     @Insert
-    suspend fun insert(measurement: BodyMeasurement): Long
+    suspend fun insert(readings: List<BodyReading>)
+
+    /** Health Connect readings, keyed by their record id: a record seen again replaces its row. */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertFromHealthConnect(readings: List<BodyReading>)
+
+    @Query("SELECT hcRecordId FROM BodyReading WHERE metric = :metric AND hcRecordId IS NOT NULL AND timestamp >= :from")
+    suspend fun healthConnectIdsSince(metric: BodyMetric, from: Instant): List<String>
+
+    @Query("DELETE FROM BodyReading WHERE hcRecordId IN (:ids)")
+    suspend fun deleteByHealthConnectIds(ids: List<String>)
 
     @Delete
-    suspend fun delete(measurement: BodyMeasurement)
+    suspend fun delete(readings: List<BodyReading>)
 }

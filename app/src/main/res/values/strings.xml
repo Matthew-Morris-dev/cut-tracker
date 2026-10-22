@@ -78,7 +78,49 @@
     <string name="body_fat_optional">Body fat % (optional)</string>
     <string name="tips_title">Weighing tips</string>
     <string name="tips_body">Weigh daily at the same time, after the toilet and before food or drink. Alcohol and salty meals shift water weight for a day or two, so the 7-day average is the number that counts.</string>
-    <string name="health_connect_coming">Entered by hand for now. Automatic Renpho import through Health Connect is coming next.</string>
+
+    <string name="chart_weight">Weight</string>
+    <string name="chart_body_fat">Body fat</string>
+    <string name="range_7_days">7 days</string>
+    <string name="range_30_days">30 days</string>
+    <string name="range_all">All</string>
+    <string name="chart_empty">No readings in this range yet.</string>
+    <string name="chart_legend">Dots are daily readings. The line is the 7-day average.</string>
+    <string name="body_fat_only">Body fat %1$s%%</string>
+    <string name="lean_mass_value">Lean mass %1$s kg</string>
+    <string name="weigh_in_detail">%1$s · %2$s</string>
+    <string name="source_manual">Entered by hand</string>
+
+    <!-- Health Connect -->
+    <string name="health_connect">Health Connect</string>
+    <string name="hc_unavailable">Health Connect isn\'t available on this phone, so weigh-ins have to be entered by hand.</string>
+    <string name="hc_update_required">Health Connect needs an update before weigh-ins can come in.</string>
+    <string name="hc_update">Update Health Connect</string>
+    <string name="hc_not_connected">Connect to bring in weigh-ins from Renpho Health and share the food you log. In Renpho Health, turn on its Health Connect sync too.</string>
+    <string name="hc_connect">Connect</string>
+    <string name="hc_connected">Connected.</string>
+    <string name="hc_last_synced">Connected. Last synced %1$s.</string>
+    <string name="hc_last_synced_just_now">Connected. Last synced just now.</string>
+    <string name="hc_syncing">Syncing…</string>
+    <string name="hc_sync_failed">The last sync didn\'t work. It will try again next time the app opens.</string>
+    <string name="hc_background_off">Background sync is off, so new weigh-ins arrive when you open the app.</string>
+    <string name="hc_food_not_shared">Logged food isn\'t being shared with Health Connect.</string>
+    <string name="hc_sync_now">Sync now</string>
+    <string name="hc_turn_on_background">Turn on background sync</string>
+    <string name="hc_manage">Manage permissions</string>
+    <string name="hc_debug_test_weigh_ins">Add test weigh-ins (debug)</string>
+
+    <!-- Health Connect privacy screen -->
+    <string name="back">Back</string>
+    <string name="rationale_title">How Cut Tracker uses your health data</string>
+    <string name="rationale_reads_title">What it reads</string>
+    <string name="rationale_reads_body">Your weight, body fat and lean body mass, so weigh-ins from Renpho Health or any other app show on the Progress screen.</string>
+    <string name="rationale_writes_title">What it writes</string>
+    <string name="rationale_writes_body">The food you log, with its name, calories and protein, so other health apps can see what you ate.</string>
+    <string name="rationale_where_title">Where it goes</string>
+    <string name="rationale_where_body">Everything stays on this phone. Cut Tracker has no account and no server, and it doesn\'t send your data anywhere.</string>
+    <string name="rationale_change_title">Changing your mind</string>
+    <string name="rationale_change_body">You can turn any of this off in Health Connect at any time. Weigh-ins already brought in stay in Cut Tracker.</string>
 
     <!-- Settings -->
     <string name="targets">Targets</string>

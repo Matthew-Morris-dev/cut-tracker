@@ -7,14 +7,15 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import dev.matthewmorris.cuttracker.domain.Phase
 import dev.matthewmorris.cuttracker.domain.Tags
 import java.time.LocalDate
 
 @Database(
-    entities = [FoodItem::class, FoodLog::class, Goal::class, DayGoalStatus::class, BodyMeasurement::class, Targets::class],
-    version = 1,
+    entities = [FoodItem::class, FoodLog::class, Goal::class, DayGoalStatus::class, BodyReading::class, Targets::class],
+    version = 2,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -28,6 +29,7 @@ abstract class AppDatabase : RoomDatabase() {
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, "cut-tracker.db")
                 .addCallback(SeedCallback)
+                .addMigrations(MIGRATION_1_2)
                 .build()
     }
 }
@@ -85,5 +87,31 @@ private object SeedCallback : RoomDatabase.Callback() {
                 put("updatedAt", System.currentTimeMillis())
             },
         )
+    }
+}
+
+/** v2 splits each BodyMeasurement row into one BodyReading per metric it holds. */
+val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `BodyReading` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`timestamp` INTEGER NOT NULL, `metric` TEXT NOT NULL, `value` REAL NOT NULL, `source` TEXT NOT NULL, " +
+                "`sourceApp` TEXT, `hcRecordId` TEXT)",
+        )
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_BodyReading_hcRecordId` ON `BodyReading` (`hcRecordId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_BodyReading_timestamp` ON `BodyReading` (`timestamp`)")
+        db.execSQL(
+            "INSERT INTO BodyReading (timestamp, metric, value, source, sourceApp, hcRecordId) " +
+                "SELECT timestamp, 'WEIGHT_KG', weightKg, source, NULL, hcRecordId FROM BodyMeasurement",
+        )
+        db.execSQL(
+            "INSERT INTO BodyReading (timestamp, metric, value, source, sourceApp, hcRecordId) " +
+                "SELECT timestamp, 'BODY_FAT_PCT', bodyFatPct, source, NULL, NULL FROM BodyMeasurement WHERE bodyFatPct IS NOT NULL",
+        )
+        db.execSQL(
+            "INSERT INTO BodyReading (timestamp, metric, value, source, sourceApp, hcRecordId) " +
+                "SELECT timestamp, 'LEAN_MASS_KG', leanMassKg, source, NULL, NULL FROM BodyMeasurement WHERE leanMassKg IS NOT NULL",
+        )
+        db.execSQL("DROP TABLE BodyMeasurement")
     }
 }

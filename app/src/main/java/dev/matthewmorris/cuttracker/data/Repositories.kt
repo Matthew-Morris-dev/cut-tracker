@@ -1,18 +1,26 @@
 package dev.matthewmorris.cuttracker.data
 
 import dev.matthewmorris.cuttracker.data.db.AppDatabase
-import dev.matthewmorris.cuttracker.data.db.BodyMeasurement
+import dev.matthewmorris.cuttracker.data.db.BodyReading
 import dev.matthewmorris.cuttracker.data.db.FoodItem
 import dev.matthewmorris.cuttracker.data.db.FoodLog
 import dev.matthewmorris.cuttracker.data.db.Goal
 import dev.matthewmorris.cuttracker.data.db.Targets
+import dev.matthewmorris.cuttracker.data.health.HealthConnectSync
+import dev.matthewmorris.cuttracker.domain.BodyMetric
 import dev.matthewmorris.cuttracker.domain.GoalStatus
+import dev.matthewmorris.cuttracker.domain.MeasurementSource
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
-class FoodRepository(db: AppDatabase, private val resolver: GoalStatusResolver, private val clock: Clock) {
+class FoodRepository(
+    db: AppDatabase,
+    private val resolver: GoalStatusResolver,
+    private val clock: Clock,
+    private val health: HealthConnectSync,
+) {
     private val dao = db.foodDao()
 
     val presets = dao.presets()
@@ -58,6 +66,7 @@ class FoodRepository(db: AppDatabase, private val resolver: GoalStatusResolver, 
     suspend fun deleteLog(log: FoodLog) {
         dao.deleteLog(log)
         resolver.resolve(log.date, log.date)
+        health.onFoodLogDeleted(log)
     }
 
     suspend fun saveItem(item: FoodItem) {
@@ -67,8 +76,9 @@ class FoodRepository(db: AppDatabase, private val resolver: GoalStatusResolver, 
     suspend fun deleteItem(item: FoodItem) = dao.deleteItem(item)
 
     private suspend fun insertLog(log: FoodLog) {
-        dao.insertLog(log)
+        val id = dao.insertLog(log)
         resolver.resolve(log.date, log.date)
+        health.onFoodLogged(log.copy(id = id))
     }
 }
 
@@ -108,12 +118,22 @@ class TargetsRepository(db: AppDatabase, private val clock: Clock) {
     }
 }
 
-class BodyRepository(db: AppDatabase) {
+class BodyRepository(db: AppDatabase, private val clock: Clock) {
     private val dao = db.bodyDao()
 
-    val measurements = dao.all()
+    val readings = dao.all()
 
-    suspend fun add(measurement: BodyMeasurement) = dao.insert(measurement)
+    suspend fun addManual(weightKg: Double, bodyFatPct: Double?) {
+        val now = Instant.now(clock)
+        dao.insert(
+            listOfNotNull(
+                BodyReading(timestamp = now, metric = BodyMetric.WEIGHT_KG, value = weightKg, source = MeasurementSource.MANUAL),
+                bodyFatPct?.let {
+                    BodyReading(timestamp = now, metric = BodyMetric.BODY_FAT_PCT, value = it, source = MeasurementSource.MANUAL)
+                },
+            ),
+        )
+    }
 
-    suspend fun delete(measurement: BodyMeasurement) = dao.delete(measurement)
+    suspend fun delete(readings: List<BodyReading>) = dao.delete(readings)
 }
