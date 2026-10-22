@@ -42,7 +42,8 @@ within the allowance (weeks start Monday) keep the streak alive without adding t
 
 ## Building
 
-Needs JDK 17+ and the Android SDK (platform 36).
+Needs JDK 17 to 21 (Gradle 8.14 does not run on Java 25) and the Android SDK (platform 36).
+With mise, `mise.toml` pins Temurin 21 for this repo; run `mise install` once.
 
 ```sh
 ./gradlew assembleDebug           # app/build/outputs/apk/debug/app-debug.apk
